@@ -1,0 +1,54 @@
+- name: Install Oh My ZSH
+  shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+  args:
+    creates: "/Users/{{ lookup('env', 'USER') }}/.oh-my-zsh"
+  tags: [ shell ]
+
+- name: Delete existing plugins
+  ansible.builtin.file:
+    path: "/Users/{{ lookup('env', 'USER') }}/.oh-my-zsh/custom/plugins"
+    state: "{{ item }}"
+    mode: "0750"
+  loop:
+    - absent
+    - directory
+  tags: [ shell ]
+
+- name: Clone zsh plugins
+  ansible.builtin.shell: "git clone {{ item }}"
+  args:
+    chdir: "/Users/{{ lookup('env', 'USER') }}/.oh-my-zsh/custom/plugins"
+  loop:
+    - https://github.com/zsh-users/zsh-autosuggestions
+    - https://github.com/zsh-users/zsh-syntax-highlighting.git
+    - https://github.com/zsh-users/zsh-history-substring-search
+  ignore_errors: yes
+  tags: [ shell ]
+
+- name: Reconfigure zsh plugins
+  ansible.builtin.lineinfile:
+    path: "/Users/{{ lookup('env', 'USER') }}/.zshrc"
+    regexp: "^plugins="
+    line: "plugins=(git kubectl zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting)"
+  tags: [ shell ]
+
+- name: Add backward alt+arrow
+  ansible.builtin.lineinfile:
+    path: "/Users/{{ lookup('env', 'USER') }}/.zshrc"
+    regexp: "^bindkey.*backward-word$"
+    line: >
+      bindkey "\e\e[D" backward-word
+  tags: [ shell ]
+
+- name: Add forward alt+arrow
+  ansible.builtin.lineinfile:
+    path: "/Users/{{ lookup('env', 'USER') }}/.zshrc"
+    regexp: "^bindkey.*forward-word$"
+    line: >
+      bindkey "\e\e[C" forward-word
+  tags: [ shell ]
+
+- name: Configure iTerm settings
+  shell: >
+    /usr/libexec/PlistBuddy  -c "Set :'New Bookmarks':0:'Unlimited Scrollback' 1" ~/Library/Preferences/com.googlecode.iterm2.plist
+  tags: [ shell ]

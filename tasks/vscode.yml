@@ -1,0 +1,46 @@
+- name: Create the VSCode directory
+  ansible.builtin.file:
+    path: "/Users/{{ lookup('env', 'USER') }}/Library/Application Support/Code/User/"
+    state: directory
+    mode: "0750"
+  tags: [ vscode ]
+
+- name: Create a default VSCode configuration
+  template:
+    src: templates/vscode-settings.json.j2
+    dest: "/Users/{{ lookup('env', 'USER') }}/Library/Application Support/Code/User/settings.json"
+    owner: "{{ lookup('env', 'USER') }}"
+    force: yes
+  tags: [ vscode ]
+
+#- name: Create a default VSCode keuybinding configuration
+#  template:
+#    src: templates/vscode-keybindings.json.j2
+#    dest: "/Users/{{ lookup('env', 'USER') }}/Library/Application Support/Code/User/keybindings.json"
+#    owner: "{{ lookup('env', 'USER') }}"
+#    force: yes
+
+- name: "check to see if brew managed by homebrew"
+  ansible.builtin.stat:
+    path: "{{ homebrew_bin_path }}/code"
+  register: vscode_cmd_stat
+  tags: [ vscode ]
+
+- name: "set code cli path (brew)"
+  set_fact:
+    vscode_code_cmd: "{{ homebrew_bin_path }}/code"
+  when: vscode_cmd_stat.stat
+  tags: [ vscode ]
+
+- name: "set code cli path (default)"
+  set_fact:
+    vscode_code_cmd: "code"
+  when: not vscode_cmd_stat.stat
+  tags: [ vscode ]
+
+# Add something which ensures path is set here
+- name: Install VSCode extensions
+  shell: "{{ vscode_code_cmd }} --install-extension {{ item }}"
+  with_items:
+    - golang.Go
+  tags: [ vscode ]

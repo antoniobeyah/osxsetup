@@ -1,0 +1,61 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Install homebrew
+      include_role:
+        name: geerlingguy.mac.homebrew
+
+    - name: Determine the homebrew_bin_path
+      set_fact:
+        homebrew_bin_path: "{{ (ansible_machine == 'arm64') | ternary('/opt/homebrew', '/usr/local') }}/bin"
+      tags: [ always ]
+
+    - name: Make sure homebrew bin is in path
+      ansible.builtin.lineinfile:
+        path: /etc/paths
+        state: present
+        line: '{{ homebrew_bin_path }}'
+      become: true
+      become_user: root
+
+    - name: 'add custom homebrew repos'
+      community.general.homebrew_tap:
+        name: [
+          homebrew/cask-versions,
+        ]
+
+    - name: Install core packages via brew casks
+      community.general.homebrew_cask:
+        name: "{{ item }}"
+      ignore_errors: yes
+      with_items:
+        - google-chrome
+        - iterm2
+        - visual-studio-code
+        - firefox-developer-edition
+
+    - name: "Install homebrew packages"
+      community.general.homebrew:
+        name:
+          - docker # needed for the `docker` cli
+          - kubectl 
+          - colima
+          - ack
+          - zsh-autosuggestions
+          - jq
+
+    - name: configure vim
+      include_tasks: tasks/vim.yml
+      tags: [ vim ]
+
+    - name: install/configure vscode
+      include_tasks: tasks/vscode.yml
+      tags: [ vscode ]
+
+    - name: install/configure intellij
+      include_tasks: tasks/intellij.yml
+      tags: [ intellij ]
+
+    - name: configure shell
+      include_tasks: tasks/shell.yml
+      tags: [ shell ]
