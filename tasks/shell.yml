@@ -22,6 +22,7 @@
     - https://github.com/zsh-users/zsh-autosuggestions
     - https://github.com/zsh-users/zsh-syntax-highlighting.git
     - https://github.com/zsh-users/zsh-history-substring-search
+    - https://github.com/MichaelAquilina/zsh-you-should-use.git
   ignore_errors: yes
   tags: [ shell ]
 
@@ -29,23 +30,23 @@
   ansible.builtin.lineinfile:
     path: "/Users/{{ lookup('env', 'USER') }}/.zshrc"
     regexp: "^plugins="
-    line: "plugins=(git kubectl zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting)"
+    line: "plugins=(git kubectl zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting you-should-use)"
   tags: [ shell ]
 
-- name: Add backward alt+arrow
+- name: Add key bindings
   ansible.builtin.lineinfile:
     path: "/Users/{{ lookup('env', 'USER') }}/.zshrc"
-    regexp: "^bindkey.*backward-word$"
+    regexp: "^bindkey.*{{ item.key }}$"
     line: >
-      bindkey "\e\e[D" backward-word
-  tags: [ shell ]
+      bindkey "{{ item.value }}" {{ item.key }}
+  vars:
+    key_bindings:
+      backward-word: "^[[D"
+      forward-word: '^[[C'
+      history-substring-search-up: "^[[A"
+      history-substring-search-down: "^[[B"
+  loop: "{{ key_bindings|dict2items }}"
 
-- name: Add forward alt+arrow
-  ansible.builtin.lineinfile:
-    path: "/Users/{{ lookup('env', 'USER') }}/.zshrc"
-    regexp: "^bindkey.*forward-word$"
-    line: >
-      bindkey "\e\e[C" forward-word
   tags: [ shell ]
 
 - name: Configure iTerm settings

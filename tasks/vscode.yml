@@ -20,7 +20,7 @@
 #    owner: "{{ lookup('env', 'USER') }}"
 #    force: yes
 
-- name: "check to see if brew managed by homebrew"
+- name: "check to see if vscode managed by homebrew"
   ansible.builtin.stat:
     path: "{{ homebrew_bin_path }}/code"
   register: vscode_cmd_stat
@@ -29,13 +29,13 @@
 - name: "set code cli path (brew)"
   set_fact:
     vscode_code_cmd: "{{ homebrew_bin_path }}/code"
-  when: vscode_cmd_stat.stat
+  when: vscode_cmd_stat.stat.exists
   tags: [ vscode ]
 
 - name: "set code cli path (default)"
   set_fact:
     vscode_code_cmd: "code"
-  when: not vscode_cmd_stat.stat
+  when: not vscode_cmd_stat.stat.exists
   tags: [ vscode ]
 
 # Add something which ensures path is set here
