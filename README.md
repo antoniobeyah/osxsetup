@@ -1,14 +1,14 @@
 # osxsetup
 
-Based originally on: https://github.com/TalkingQuickly/ansible-osx-setup
+Based originally on: https://github.com/TalkingQuickly/ansible-osx-setup and then ported to https://taskfile.dev/faq/
 
 
 ## Getting Started
 
 git clone https://github.com/antoniobeyah/osxsetup
 cd osxsetup
-./bin/bootstrap
+./bootstrap.sh
 
-# Run a specific Ansible tag
+# Configure
 
-`./bin/apply <tag>`
+`task`

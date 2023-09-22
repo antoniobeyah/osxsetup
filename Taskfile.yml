@@ -1,0 +1,110 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  default:
+    cmds:
+    - task: brew
+    - task: shell
+  brew:
+    cmds:
+      - task: brew::setup
+      - task: brew::packages
+      - task: brew::casks
+
+  brew::setup:
+    cmds:
+      - brew update
+      - brew upgrade
+
+  brew::casks:
+    deps:
+      - brew::setup
+    cmds:
+      - for:
+          - google-chrome
+          - iterm2
+          - visual-studio-code
+          - firefox-developer-edition
+          - jetbrains-toolbox
+        cmd: brew install --cask {{ .ITEM }}
+
+  brew::packages:
+    cmds:
+      - for:
+          - docker # needed for the `docker` cli
+          - kubectl 
+          - colima
+          - ack
+          - zsh-autosuggestions
+          - jq
+          - neovim
+          - tree
+        cmd: brew install {{ .ITEM }}
+
+  shell:
+    cmds:
+      - task: shell::zsh
+      - task: shell::vim
+      - task: shell::shortcuts
+      - task: shell::iterm
+
+  shell::vim:
+    generates:
+      - "{{.HOME}}/.vimrc"
+    cmds:
+      - curl -L -o ~/.vimrc https://raw.githubusercontent.com/amix/vimrc/master/vimrcs/basic.vim
+      # vimrc customizations
+      - sed -ibak 's/shiftwidth=4/shiftwidth=2/g' {{ .HOME }}/.vimrc
+      - sed -ibak 's/tabstop=4/tabstop=2/g' {{ .HOME }}/.vimrc
+      - grep relativenumber {{ .HOME }}/.vimrc || echo 'set number relativenumber' >> {{ .HOME }}/.vimrc
+      
+  shell::zsh:
+    vars:
+      ZSH_CUSTOM: '{{ .HOME }}/.zsh_custom'
+      ZSH_RC: '{{ .HOME }}/.zshrc'
+    cmds:
+      # setup a directory for zsh themes/plugins
+      - mkdir -p {{ .ZSH_CUSTOM }}
+      - for:
+        - https://github.com/romkatv/powerlevel10k.git
+        - https://github.com/zsh-users/zsh-syntax-highlighting.git
+        - https://github.com/zsh-users/zsh-autosuggestions
+        - https://github.com/zsh-users/zsh-history-substring-search
+        - https://github.com/MichaelAquilina/zsh-you-should-use.git
+        - https://github.com/ohmyzsh/ohmyzsh.git
+        cmd: cd {{.ZSH_CUSTOM}} && git clone --depth=1 {{.ITEM}} || true
+      - cp templates/.p10k.zsh {{.HOME}}/.p10k.zsh
+      - grep powerlevel10k.zsh-theme {{ .ZSH_RC }} || echo 'source ~/powerlevel10k/powerlevel10k.zsh-theme' >> {{.ZSH_RC}}
+      - grep ~/.p10k.zsh {{ .ZSH_RC }} || echo '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh' >> {{.ZSH_RC}}
+      - grep 'alias ls' {{.ZSH_RC}} || echo "alias ls='ls --color'" >> {{.ZSH_RC}}
+      - grep 'compinit' {{.ZSH_RC}} || echo "autoload -Uz compinit; compinit" >> {{.ZSH_RC}}
+      - for:
+        - kubectl
+        - git
+        cmd: grep {{ .ITEM }}.plugin.zsh {{ .ZSH_RC }} || echo "source {{.ZSH_CUSTOM}}/ohmyzsh/plugins/{{.ITEM}}/{{.ITEM}}.plugin.zsh" >> {{.ZSH_RC}}
+      - for:
+        - zsh-syntax-highlighting
+        - zsh-autosuggestions
+        - zsh-history-substring-search
+        cmd: grep {{.ITEM}} {{.ZSH_RC}} || echo "source {{.ZSH_CUSTOM}}/{{.ITEM}}/{{.ITEM}}.zsh" >> {{.ZSH_RC}}
+      - grep you-should-use {{.ZSH_RC}} || echo "source {{.ZSH_CUSTOM}}/zsh-you-should-use/you-should-use.plugin.zsh" >> {{.ZSH_RC}}
+
+  
+  shell::shortcuts: # TODO: not working due to shell escaping
+    vars:
+      ZSH_RC: '{{.HOME}}/.zshrc'
+    cmds:
+      - 'grep backward-word {{.ZSH_RC}} || echo bindkey "^[^[[D" backward-word >> {{.ZSH_RC}}'
+        #- for:
+        #  - '"^[^[[D" backward-word'
+        #  - '"^[^[[C" forward-word'
+        #  - '"^[[A" history-substring-search-up'
+        #  - '"^[[B" history-substring-search-down'
+        #  cmd: "grep '{{.ITEM}}' {{.ZSH_RC}} || echo 'bindkey {{.ITEM}}' >> {{.ZSH_RC}}"
+
+  shell::iterm:
+    cmds:
+      - /usr/libexec/PlistBuddy  -c "Set :'New Bookmarks':0:'Unlimited Scrollback' 1" ~/Library/Preferences/com.googlecode.iterm2.plist
+
