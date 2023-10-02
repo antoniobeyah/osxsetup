@@ -41,6 +41,10 @@ tasks:
           - jq
           - neovim
           - tree
+          - helm
+          - argocd
+          - earthly
+          - go
         cmd: brew install {{ .ITEM }}
 
   shell:
@@ -49,6 +53,27 @@ tasks:
       - task: shell::vim
       - task: shell::shortcuts
       - task: shell::iterm
+      - task: shell::neovim
+
+
+  shell::neovim_clean:
+    cmds:
+      - rm -rf "{{.HOME}}/.config/nvim"
+      - rm -rf "{{.HOME}}/.local/share/nvim"
+
+  shell::neovim:
+    generates:
+      - "{{.HOME}}/.config/nvim"
+      - "{{.HOME}}/.config/nvim/lua/custom/chadrc.lua"
+      - "{{.HOME}}/.config/nvim/lua/custom/plugins.lua"
+      - "{{.HOME}}/.config/nvim/lua/custom/configs/lspconfig.lua"
+    cmds:
+      - git clone https://github.com/NvChad/NvChad {{.HOME}}/.config/nvim --depth 1 || true # nvchad
+      - mkdir -p {{.HOME}}/.config/nvim/lua/custom/configs
+      - cp templates/nvim_chadrc.lua {{.HOME}}/.config/nvim/lua/custom/chadrc.lua
+      - cp templates/nvim_plugins.lua {{.HOME}}/.config/nvim/lua/custom/plugins.lua
+      - cp templates/nvim_lspconfig.lua {{.HOME}}/.config/nvim/lua/custom/configs/lspconfig.lua
+      - echo "run nvim and execute :MasonInstallAll"
 
   shell::vim:
     generates:
