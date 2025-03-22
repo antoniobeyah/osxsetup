@@ -26,8 +26,10 @@ tasks:
           - google-chrome
           - iterm2
           - visual-studio-code
-          - firefox-developer-edition
+          - firefox@developer-edition
           - jetbrains-toolbox
+          - brave-browser
+          - font-meslo-lg-nerd-font
         cmd: brew install --cask {{ .ITEM }}
 
   brew::packages:
@@ -45,6 +47,7 @@ tasks:
           - argocd
           - earthly
           - go
+          - asdf
         cmd: brew install {{ .ITEM }}
 
   shell:
@@ -68,7 +71,8 @@ tasks:
       - "{{.HOME}}/.config/nvim/lua/custom/plugins.lua"
       - "{{.HOME}}/.config/nvim/lua/custom/configs/lspconfig.lua"
     cmds:
-      - git clone https://github.com/NvChad/NvChad {{.HOME}}/.config/nvim --depth 1 || true # nvchad
+      - rm -rf {{.HOME}}/.config/nvim
+      - git clone https://github.com/NvChad/starter {{.HOME}}/.config/nvim --depth 1 || true # nvchad
       - mkdir -p {{.HOME}}/.config/nvim/lua/custom/configs
       - cp templates/nvim_chadrc.lua {{.HOME}}/.config/nvim/lua/custom/chadrc.lua
       - cp templates/nvim_plugins.lua {{.HOME}}/.config/nvim/lua/custom/plugins.lua
@@ -84,7 +88,7 @@ tasks:
       - sed -ibak 's/shiftwidth=4/shiftwidth=2/g' {{ .HOME }}/.vimrc
       - sed -ibak 's/tabstop=4/tabstop=2/g' {{ .HOME }}/.vimrc
       - grep relativenumber {{ .HOME }}/.vimrc || echo 'set number relativenumber' >> {{ .HOME }}/.vimrc
-      
+
   shell::zsh:
     vars:
       ZSH_CUSTOM: '{{ .HOME }}/.zsh_custom'
@@ -101,7 +105,7 @@ tasks:
         - https://github.com/ohmyzsh/ohmyzsh.git
         cmd: cd {{.ZSH_CUSTOM}} && git clone --depth=1 {{.ITEM}} || true
       - cp templates/.p10k.zsh {{.HOME}}/.p10k.zsh
-      - grep powerlevel10k.zsh-theme {{ .ZSH_RC }} || echo 'source ~/powerlevel10k/powerlevel10k.zsh-theme' >> {{.ZSH_RC}}
+      - grep powerlevel10k.zsh-theme {{ .ZSH_RC }} || echo 'source {{.ZSH_CUSTOM}}/powerlevel10k/powerlevel10k.zsh-theme' >> {{.ZSH_RC}}
       - grep ~/.p10k.zsh {{ .ZSH_RC }} || echo '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh' >> {{.ZSH_RC}}
       - grep 'alias ls' {{.ZSH_RC}} || echo "alias ls='ls --color'" >> {{.ZSH_RC}}
       - grep 'compinit' {{.ZSH_RC}} || echo "autoload -Uz compinit; compinit" >> {{.ZSH_RC}}
@@ -132,4 +136,29 @@ tasks:
   shell::iterm:
     cmds:
       - /usr/libexec/PlistBuddy  -c "Set :'New Bookmarks':0:'Unlimited Scrollback' 1" ~/Library/Preferences/com.googlecode.iterm2.plist
+      - /usr/libexec/PlistBuddy -c "set :New\\ Bookmarks:0:Normal\\ Font \\"MesloLGSNFM-Regular 12\\"" ~/Library/Preferences/com.googlecode.iterm2.plist
 
+  dock:
+    cmds:
+      - defaults write com.apple.dock persistent-apps -array
+      - killall Dock
+      - brew install dockutil
+      - dockutil --add /Applications/iTerm.app
+      - dockutil --add /Applications/Firefox\ Developer\ Edition.app
+      - dockutil --add /Applications/Brave\ Browser.app 
+
+  shell::asdf:
+    cmds:
+      # nodejs
+      - brew install gpg gawk
+      - asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
+      - asdf install nodejs latest
+
+  vscode:
+    cmds:
+      - for:
+          - ms-vscode-remote.remote-containers
+          - github.copilot
+          - github.copilot-chat
+          - golang.go
+        cmd: code --install-extension {{.ITEM}}
